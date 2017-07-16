@@ -171,3 +171,4 @@ fabric.properties
 
 # Spotipy caches
 lfml2sp/.cache-*
+.cache-*
