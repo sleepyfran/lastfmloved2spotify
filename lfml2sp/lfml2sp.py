@@ -232,6 +232,62 @@ class Lfml2sp(object):
         self.playlist = self.spotify.user_playlist(self.saved_config['spotify_username'],
                                                    self.saved_config['playlist_id'])
 
+    def save_loved_tracks(self) -> None:
+        """
+        Fetches every loved track from LastFM and attempts to save it in the Spotify playlist that the user chose.
+        """
+        print(TerminalColors.OKBLUE, end='')
+        print('Fetching your loved tracks from LastFM...')
+        print(TerminalColors.ENDC, end='')
+
+        try:
+            lastfm_user = self.lastfm.get_user(self.saved_config['lastfm_username'])
+            loved_tracks = lastfm_user.get_loved_tracks(limit=None)
+        except pylast.LastFMNetwork:
+            print(TerminalColors.FAIL, end='')
+            print('There was an error fetching your loved tracks. Please, try again.')
+            print(TerminalColors.ENDC, end='')
+            exit(0)
+
+        print(TerminalColors.OKBLUE, end='')
+        print('Retrieved ' + str(len(loved_tracks)) + ' songs from your LastFM account.')
+        print('Attempting to find those tracks in Spotify and adding them to the list...\n')
+
+        # Here we will save every track ID we come across in Spotify
+        spotify_tracks_id = []
+
+        for track in loved_tracks:
+            track_query = track.track.artist.name + ' - ' + track.track.title
+            print('Processing: ' + track_query)
+
+            spotify_tracks = self.spotify.search(q=track_query, type='track')['tracks']
+
+            if len(spotify_tracks['items']) > 0:
+                print('Adding: ' + spotify_tracks['items'][0]['name'] + ' to the playlist.\n')
+                spotify_tracks_id.append(spotify_tracks['items'][0]['id'])
+            else:
+                print(TerminalColors.WARNING, end='')
+                print('No results found for ' + track_query + '\n')
+                print(TerminalColors.OKBLUE, end='')
+
+        print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
+
+        # The Spotify API accepts a maximum of 100 tracks per request
+        if len(spotify_tracks_id) > 100:
+            # Split the list into chunks of 100 items
+            chunks = [spotify_tracks_id[x:x + 100] for x in range(0, len(spotify_tracks_id), 100)]
+
+            for chunk in chunks:
+                self.spotify.user_playlist_add_tracks(self.saved_config['spotify_username'],
+                                                      self.saved_config['playlist_id'],
+                                                      chunk)
+        else:
+            self.spotify.user_playlist_add_tracks(self.saved_config['spotify_username'],
+                                                  self.saved_config['playlist_id'],
+                                                  spotify_tracks_id)
+
+        print(TerminalColors.ENDC, end='')
+
 
 def main():
     print(TerminalColors.BOLD, end='')
@@ -242,7 +298,7 @@ def main():
     app = Lfml2sp()
     app.playlist_definition()
 
-    print(TerminalColors.WARNING, end='')
+    print(TerminalColors.WARNING)
     answer = prompt('Are you sure you want to save all your loved tracks from LastFM in the playlist '
                     + app.playlist['name'] + '? (y/n): ', ['y', 'n'], TerminalColors.WARNING)
 
@@ -252,7 +308,8 @@ def main():
         app.save_config()
         exit(0)
 
-        # TODO: Go on with the flow!
+    app.save_loved_tracks()
+    print('All done! Check your playlist and enjoy the music!')
 
 
 if __name__ == '__main__':
