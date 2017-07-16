@@ -1,5 +1,5 @@
 # LastFMLoved2Spotify
-🎧 This script allows you to easily sync your *loved* tracks from **LastFM** into a **Spotify** playlist.
+This script allows you to easily sync your *loved* tracks from **LastFM** into a **Spotify** playlist. 🎧
 
 ## Usage
 In order to use *lastfmloved2spotify* you'll need Python 3 or higher installed in your system with these libraries:
@@ -26,4 +26,4 @@ Then navigate through the terminal to the folder in which you downloaded the pro
 python3 lfml2sp.py
 ```
 
-After that simply follow the on-screen instructions and enjoy your music! 🎧
+After that simply follow the on-screen instructions and enjoy your music! 
