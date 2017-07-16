@@ -25,6 +25,31 @@ from api_keys import *
 CONFIG_FILE = os.path.expanduser("~") + "/.lastfmloved2spotify.json"
 
 
+def prompt(text, possible_values, color=None) -> str:
+    """
+    Prompts the user for an answer and checks if that answer is in the given possible values.
+    :param text: Text shown to the user when asked for the answer.
+    :param possible_values: Possible values that can be entered as Strings. Example: ['0', '1']
+    :param color: Optional color to be shown when printing the Text.
+    :return: A String with the answer given by the user which is one of the possible values.
+    """
+    while True:
+        if color:
+            print(color, end='')
+
+        answer = input(text)
+
+        if color:
+            print(TerminalColors.ENDC, end='')
+
+        if answer in possible_values:
+            return answer
+
+        print(TerminalColors.FAIL, end='')
+        print('Invalid choice. Please, enter a valid value.')
+        print(TerminalColors.ENDC, end='')
+
+
 class TerminalColors:
     """
     Prints colors in the terminal. Taken from: https://stackoverflow.com/a/287944/6811219
@@ -52,6 +77,7 @@ class Lfml2sp(object):
         self.lastfm = None
         self.spotify = None
         self.saved_config = {}
+        self.playlist = None
 
         if not os.path.exists(CONFIG_FILE):
             self.initial_config()
@@ -168,7 +194,7 @@ class Lfml2sp(object):
         """
         Creates a new playlist in the user's account and saves its ID to use it later.
         """
-        playlist_name = input('Enter the name of the new playlist:')
+        playlist_name = input('Enter the name of the new playlist: ')
 
         while True:
             if playlist_name is None or playlist_name == '':
@@ -177,8 +203,9 @@ class Lfml2sp(object):
                 break
 
         # Create the new playlist
-        self.spotify.user_playlist_create(self.saved_config['spotify_username'],
-                                          playlist_name)
+        playlist = self.spotify.user_playlist_create(self.saved_config['spotify_username'],
+                                                     playlist_name)
+        self.saved_config['playlist_id'] = playlist['id']
 
     def playlist_definition(self) -> None:
         """
@@ -191,28 +218,19 @@ class Lfml2sp(object):
             print('0 -> New playlist')
             print('1 -> Existent playlist')
 
-            while True:
-                try:
-                    prompt = int(input('Enter your choice: '))
+            answer = int(prompt('Enter your choice: ', ['0', '1']))
 
-                    if prompt in [0, 1]:
-                        break
-                except ValueError:
-                    pass
-
-                print(TerminalColors.FAIL, end='')
-                print('Invalid choice. Please enter either 0 or 1.')
-                print(TerminalColors.ENDC, end='')
-
-            if prompt == 0:
+            if answer == 0:
                 self.new_playlist()
-            elif prompt == 1:
+            elif answer == 1:
+                print('This feature is not implemented yet. Coming soon!')
+                print('In the meantime, feel free to create a new playlist.')
                 self.new_playlist()
 
             self.save_config()
-        else:
-            playlist = self.spotify.user_playlist(self.saved_config['spotify_username'],
-                                                  self.saved_config['playlist_id'])
+
+        self.playlist = self.spotify.user_playlist(self.saved_config['spotify_username'],
+                                                   self.saved_config['playlist_id'])
 
 
 def main():
@@ -223,6 +241,18 @@ def main():
 
     app = Lfml2sp()
     app.playlist_definition()
+
+    print(TerminalColors.WARNING, end='')
+    answer = prompt('Are you sure you want to save all your loved tracks from LastFM in the playlist '
+                    + app.playlist['name'] + '? (y/n): ', ['y', 'n'], TerminalColors.WARNING)
+
+    if answer == 'n':
+        print('No problem! We will now delete the reference to that playlist so you can configure a new one next time.')
+        app.saved_config.pop('playlist_id', None)
+        app.save_config()
+        exit(0)
+
+        # TODO: Go on with the flow!
 
 
 if __name__ == '__main__':
