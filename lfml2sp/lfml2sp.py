@@ -335,8 +335,8 @@ class Lfml2sp(object):
             print('Nothing new to add!')
             print(TerminalColors.ENDC, end='')
             return
-        else:
-            print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
+
+        print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
 
         # The Spotify API accepts a maximum of 100 tracks per request
         if len(spotify_tracks_id) > 100:
