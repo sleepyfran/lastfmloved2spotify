@@ -278,11 +278,33 @@ class Lfml2sp(object):
             exit(0)
 
         print(TerminalColors.OKBLUE, end='')
-        print('Retrieved ' + str(len(loved_tracks)) + ' songs from your LastFM account.')
-        print('Attempting to find those tracks in Spotify and adding them to the list...\n')
+        print('Retrieved ' + str(len(loved_tracks)) + ' songs from your LastFM account.\n')
 
         # Here we will save every track ID we come across in Spotify
         spotify_tracks_id = []
+
+        print('Retrieving current tracks from the Spotify playlist to check for duplicates...\n')
+
+        # Get ALL the songs from the playlist. Necessary to use this one instead of the one stored
+        # in the Object because the Spotify API limits 100 tracks per request, so the one saved won't
+        # actually contain every song of the playlist
+        songs_already_added = []
+        current_playlist = self.spotify.user_playlist(self.saved_config['spotify_username'],
+                                                      self.saved_config['playlist_id'],
+                                                      fields="tracks,next")
+
+        tracks = current_playlist['tracks']
+
+        for playlist_track in tracks['items']:
+            songs_already_added.append(playlist_track['track']['id'])
+
+        # Keep'em coming!
+        while tracks['next']:
+            tracks = self.spotify.next(tracks)
+            for playlist_track in tracks['items']:
+                songs_already_added.append(playlist_track['track']['id'])
+
+        print('Attempting to find the LastFM tracks in Spotify and adding them to the list...\n')
 
         for track in loved_tracks:
             track_query = track.track.artist.name + ' - ' + track.track.title
@@ -291,14 +313,30 @@ class Lfml2sp(object):
             spotify_tracks = self.spotify.search(q=track_query, type='track')['tracks']
 
             if len(spotify_tracks['items']) > 0:
-                print('Adding: ' + spotify_tracks['items'][0]['name'] + ' to the playlist.\n')
-                spotify_tracks_id.append(spotify_tracks['items'][0]['id'])
+                track_id = spotify_tracks['items'][0]['id']
+
+                # Check that the track isn't already added to the playlist
+                if track_id not in songs_already_added:
+                    print('Adding: ' + spotify_tracks['items'][0]['name'] + ' to the playlist.\n')
+                    spotify_tracks_id.append(track_id)
+                else:
+                    print(TerminalColors.WARNING, end='')
+                    print(track_query + ' is already on the playlist!\n')
+                    print(TerminalColors.OKBLUE, end='')
+
+
             else:
                 print(TerminalColors.WARNING, end='')
                 print('No results found for ' + track_query + '\n')
                 print(TerminalColors.OKBLUE, end='')
 
-        print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
+        # Check if there's anything to add
+        if len(spotify_tracks_id) == 0:
+            print('Nothing new to add!')
+            print(TerminalColors.ENDC, end='')
+            return
+        else:
+            print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
 
         # The Spotify API accepts a maximum of 100 tracks per request
         if len(spotify_tracks_id) > 100:
