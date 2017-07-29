@@ -323,8 +323,6 @@ class Lfml2sp(object):
                     print(TerminalColors.WARNING, end='')
                     print(track_query + ' is already on the playlist!\n')
                     print(TerminalColors.OKBLUE, end='')
-
-
             else:
                 print(TerminalColors.WARNING, end='')
                 print('No results found for ' + track_query + '\n')
@@ -335,6 +333,10 @@ class Lfml2sp(object):
             print('Nothing new to add!')
             print(TerminalColors.ENDC, end='')
             return
+
+        # Remove duplicates first. For some reason the LastFM API sometimes returns duplicates
+        # or I messed up adding things somewhere up there, but anyway...
+        spotify_tracks_id = list(set(spotify_tracks_id))
 
         print('Adding ' + str(len(spotify_tracks_id)) + ' tracks to your playlist...')
 
