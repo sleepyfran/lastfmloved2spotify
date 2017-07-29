@@ -111,7 +111,9 @@ class Lfml2sp(object):
 
         try:
             token = util.prompt_for_user_token(self.saved_config['spotify_username'],
-                                               scope='playlist-modify-public',
+                                               scope='playlist-modify-public '
+                                                     'playlist-modify-private '
+                                                     'playlist-read-private',
                                                client_id=SPOTIFY_CLIENT_ID,
                                                client_secret=SPOTIFY_CLIENT_SECRET,
                                                redirect_uri='http://localhost:8888/callback')
@@ -172,7 +174,9 @@ class Lfml2sp(object):
 
         try:
             token = util.prompt_for_user_token(username,
-                                               scope='playlist-modify-public',
+                                               scope='playlist-modify-public '
+                                                     'playlist-modify-private '
+                                                     'playlist-read-private',
                                                client_id=SPOTIFY_CLIENT_ID,
                                                client_secret=SPOTIFY_CLIENT_SECRET,
                                                redirect_uri='http://localhost:8888/callback')
@@ -207,6 +211,32 @@ class Lfml2sp(object):
                                                      playlist_name)
         self.saved_config['playlist_id'] = playlist['id']
 
+    def select_playlist(self) -> None:
+        """
+        Allows the user to select an already existent playlist to use it later.
+        """
+        print('Here you have the names of all the playlist you can edit:')
+        print(TerminalColors.WARNING, end='')
+        print('Note: Due to Spotify API\'s restrictions you won\'t be able to select a collaborative playlist.')
+        print(TerminalColors.ENDC, end='')
+
+        all_playlists = self.spotify.current_user_playlists(limit=None)
+        user_playlists = []
+        possible_values = []
+
+        # Iterate through every playlist of the user (the user's username is its owner id)
+        # showing an index for the selection and saving those indexes as possible values
+        for playlist in all_playlists['items']:
+            if playlist['owner']['id'] == self.saved_config['spotify_username']:
+                current_item = str(len(user_playlists))
+                possible_values.append(current_item)
+                print(current_item + ' -> ' + playlist['name'])
+                user_playlists.append(playlist)
+
+        # Get the selected playlist and save its ID
+        answer = int(prompt('Enter your choice: ', possible_values))
+        self.saved_config['playlist_id'] = user_playlists[answer]['id']
+
     def playlist_definition(self) -> None:
         """
         Asks the user whether the playlist in which the songs are going to be saved will be new or an already
@@ -223,9 +253,7 @@ class Lfml2sp(object):
             if answer == 0:
                 self.new_playlist()
             elif answer == 1:
-                print('This feature is not implemented yet. Coming soon!')
-                print('In the meantime, feel free to create a new playlist.')
-                self.new_playlist()
+                self.select_playlist()
 
             self.save_config()
 
