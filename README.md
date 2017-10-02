@@ -20,7 +20,7 @@ Once you have everything ready simply **clone** this repository or grab one of t
 
 After that you'll need to define the *api keys* that will be used by the application in order to work. Remember those nice keys you got when creating the account and the application? Now it's their moment of glory! Create a Python file in the *lfml2sp* folder with the name *api_keys.py* and this content:
 
-```
+```python
 LAST_FM_API_KEY = '<Your LastFM API Key>'
 LAST_FM_SHARED_SECRET = '<Yout LastFM Shared Secret>'
 
