@@ -38,7 +38,7 @@ func main() {
 	// CLI app configuration.
 	app := cli.NewApp()
 	app.Name = "lastfm2spotify"
-	app.Version = "1.1.0"
+	app.Version = "2.0"
 	app.Usage = "import your LastFM loved tracks to a Spotify playlist"
 
 	// Flags of the program.
